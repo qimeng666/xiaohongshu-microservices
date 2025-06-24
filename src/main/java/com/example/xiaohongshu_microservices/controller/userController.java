@@ -3,6 +3,7 @@ package com.example.xiaohongshu_microservices.controller;
 import com.example.xiaohongshu_microservices.domain.Users;
 import com.example.xiaohongshu_microservices.mapper.UsersMapper;
 import com.example.xiaohongshu_microservices.service.UsersService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,11 +21,13 @@ public class userController {
     }
 
     @PostMapping("/createUser")
+    @Operation(summary = "创建新用户")
     public ResponseEntity<Users> createUser(@RequestBody Users user) {
         usersService.save(user);
         return ResponseEntity.ok(user);
     }
     @GetMapping("/{userId}")
+    @Operation(summary = "根据用户ID查询用户信息")
     public ResponseEntity<Users> getById(@PathVariable Long userId) {
         Users user = usersService.getById(userId);
         if (user != null) {
@@ -34,6 +37,7 @@ public class userController {
         }
     }
     @PutMapping("/{userId}")
+    @Operation(summary = "更新用户邮箱")
     public ResponseEntity<Users> updateEmail(@PathVariable Long userId, @RequestParam String newEmail) {
         Users user = usersService.getById(userId);
         if (user != null) {
