@@ -6,6 +6,7 @@ import com.example.xiaohongshu_microservices.service.UsersService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 public class userController {
     private final UsersService usersService;
     private final UsersMapper usersMapper;
+    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     public userController(UsersService userService, UsersMapper usersMapper) {
         this.usersService = userService;
@@ -23,6 +25,7 @@ public class userController {
     @PostMapping("/createUser")
     @Operation(summary = "创建新用户")
     public ResponseEntity<Users> createUser(@RequestBody Users user) {
+        user.setPassword(encoder.encode(user.getPassword()));
         usersService.save(user);
         return ResponseEntity.ok(user);
     }
