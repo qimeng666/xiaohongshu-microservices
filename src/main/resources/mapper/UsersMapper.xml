@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.xiaohongshu_microservices.mapper.UsersMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.xiaohongshu_microservices.domain.Users">
+            <id property="id" column="ID" />
+            <result property="username" column="USERNAME" />
+            <result property="password" column="PASSWORD" />
+            <result property="email" column="EMAIL" />
+            <result property="createdAt" column="CREATED_AT" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        ID,USERNAME,PASSWORD,EMAIL,CREATED_AT
+    </sql>
+
+
+</mapper>
