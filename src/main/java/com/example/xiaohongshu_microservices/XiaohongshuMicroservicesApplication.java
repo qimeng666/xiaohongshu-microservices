@@ -2,11 +2,11 @@ package com.example.xiaohongshu_microservices;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 
 @SpringBootApplication
-@MapperScan("com.example.xiaohongshu_microservices.mapper")
+@EnableJpaAuditing
 public class XiaohongshuMicroservicesApplication {
 
 	public static void main(String[] args) {

@@ -1,54 +1,90 @@
 package com.example.xiaohongshu_microservices.controller;
 
-import com.example.xiaohongshu_microservices.domain.Users;
-import com.example.xiaohongshu_microservices.mapper.UsersMapper;
-import com.example.xiaohongshu_microservices.service.UsersService;
+import com.example.xiaohongshu_microservices.Entity.User;
+import com.example.xiaohongshu_microservices.Service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/users")
 @Tag(name = "用户管理", description = "用户基础信息增删改查")
 public class userController {
-    private final UsersService usersService;
-    private final UsersMapper usersMapper;
+    private final UserService userService;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
-    public userController(UsersService userService, UsersMapper usersMapper) {
-        this.usersService = userService;
-        this.usersMapper = usersMapper;
+    public userController(UserService userService) {
+        this.userService = userService;
     }
 
-    @PostMapping("/createUser")
     @Operation(summary = "创建新用户")
-    public ResponseEntity<Users> createUser(@RequestBody Users user) {
-        user.setPassword(encoder.encode(user.getPassword()));
-        usersService.save(user);
-        return ResponseEntity.ok(user);
+    @PostMapping
+    public ResponseEntity<String> createUser(@RequestBody User user) {
+        try {
+            user.setPassword(encoder.encode(user.getPassword()));
+            userService.save(user);
+            return ResponseEntity.ok("创建成功");
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("创建失败");
+        }
     }
-    @GetMapping("/{userId}")
+
     @Operation(summary = "根据用户ID查询用户信息")
-    public ResponseEntity<Users> getById(@PathVariable Long userId) {
-        Users user = usersService.getById(userId);
-        if (user != null) {
-            return ResponseEntity.ok(user);
-        } else {
-            return ResponseEntity.notFound().build();
+    @GetMapping("/{userId}")
+    public ResponseEntity<User> getById(@PathVariable Long userId) {
+        Optional<User> opt = userService.getById(userId);
+        return opt
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }
+
+    @Operation(summary = "更新用户信息，可传入任意可修改字段")
+    @PutMapping("/{userId}")
+    public ResponseEntity<String> updateUser(
+            @PathVariable Long userId,
+            @RequestBody User updates) {
+        Optional<User> cur = userService.getById(userId);
+        if (cur.isEmpty()) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body("用户未找到，更新失败");
+        }
+
+        User existing = cur.get();
+        if (updates.getEmail() != null) {
+            existing.setEmail(updates.getEmail());
+        }
+        if (updates.getUsername() != null) {
+            existing.setUsername(updates.getUsername());
+        }
+        // update password
+        // if (updates.getPassword() != null) {
+        //     existing.setPassword(encoder.encode(updates.getPassword()));
+        // }
+
+        try {
+            userService.update(existing);
+            return ResponseEntity.ok("更新成功");
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("更新失败");
         }
     }
-    @PutMapping("/{userId}")
-    @Operation(summary = "更新用户邮箱")
-    public ResponseEntity<Users> updateEmail(@PathVariable Long userId, @RequestParam String newEmail) {
-        Users user = usersService.getById(userId);
-        if (user != null) {
-            user.setEmail(newEmail);
-            usersService.updateById(user);
-            return ResponseEntity.ok(user);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+
+    @Operation(summary = "根据邮箱精确查询用户信息")
+    @GetMapping(params = "email")
+    public ResponseEntity<User> getByEmail(@RequestParam String email) {
+        Optional<User> opt = userService.findByEmail(email);
+        return opt
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 }
