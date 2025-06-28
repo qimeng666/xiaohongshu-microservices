@@ -2,9 +2,11 @@ package com.example.xiaohongshu_microservices;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 
 @SpringBootApplication
+@EnableJpaAuditing
 public class XiaohongshuMicroservicesApplication {
 
 	public static void main(String[] args) {
