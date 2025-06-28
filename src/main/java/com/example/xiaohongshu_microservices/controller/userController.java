@@ -4,53 +4,87 @@ import com.example.xiaohongshu_microservices.Entity.User;
 import com.example.xiaohongshu_microservices.Service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/users")
 @Tag(name = "用户管理", description = "用户基础信息增删改查")
-@RequiredArgsConstructor
 public class userController {
     private final UserService userService;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
+    public userController(UserService userService) {
+        this.userService = userService;
+    }
+
     @Operation(summary = "创建新用户")
     @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        user.setPassword(encoder.encode(user.getPassword()));
-        User saved = userService.save(user);
-        return ResponseEntity.ok(saved);
+    public ResponseEntity<String> createUser(@RequestBody User user) {
+        try {
+            user.setPassword(encoder.encode(user.getPassword()));
+            userService.save(user);
+            return ResponseEntity.ok("创建成功");
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("创建失败");
+        }
     }
 
     @Operation(summary = "根据用户ID查询用户信息")
     @GetMapping("/{userId}")
     public ResponseEntity<User> getById(@PathVariable Long userId) {
-        return userService.getById(userId)
+        Optional<User> opt = userService.getById(userId);
+        return opt
                 .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
-    @Operation(summary = "更新用户邮箱")
+    @Operation(summary = "更新用户信息，可传入任意可修改字段")
     @PutMapping("/{userId}")
-    public ResponseEntity<User> updateEmail(
+    public ResponseEntity<String> updateUser(
             @PathVariable Long userId,
-            @RequestParam String newEmail) {
-        return userService.getById(userId)
-                .map(user -> {
-                    user.setEmail(newEmail);
-                    return ResponseEntity.ok(userService.update(user));
-                })
-                .orElseGet(() -> ResponseEntity.notFound().build());
+            @RequestBody User updates) {
+        Optional<User> cur = userService.getById(userId);
+        if (cur.isEmpty()) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body("用户未找到，更新失败");
+        }
+
+        User existing = cur.get();
+        if (updates.getEmail() != null) {
+            existing.setEmail(updates.getEmail());
+        }
+        if (updates.getUsername() != null) {
+            existing.setUsername(updates.getUsername());
+        }
+        // update password
+        // if (updates.getPassword() != null) {
+        //     existing.setPassword(encoder.encode(updates.getPassword()));
+        // }
+
+        try {
+            userService.update(existing);
+            return ResponseEntity.ok("更新成功");
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("更新失败");
+        }
     }
 
     @Operation(summary = "根据邮箱精确查询用户信息")
     @GetMapping(params = "email")
     public ResponseEntity<User> getByEmail(@RequestParam String email) {
-        return userService.findByEmail(email)
+        Optional<User> opt = userService.findByEmail(email);
+        return opt
                 .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 }
