@@ -87,4 +87,17 @@ public class userController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
+    public ResponseEntity<?> login(@RequestParam String username, @RequestParam String password) {
+       try{
+            User user = userService.findByName(username)
+                    .orElseThrow(() -> new RuntimeException("用户不存在"));
+            if (encoder.matches(password, user.getPassword())) {
+                return ResponseEntity.ok("登录成功");
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("密码错误");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("登录失败");
+       }
+    }
 }
