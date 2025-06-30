@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,9 +36,9 @@ public class userController {
                     .body("创建失败");
         }
     }
-
     @Operation(summary = "根据用户ID查询用户信息")
     @GetMapping("/{userId}")
+    @PreAuthorize("#userId == authentication.details or hasRole('ADMIN')")
     public ResponseEntity<User> getById(@PathVariable Long userId) {
         Optional<User> opt = userService.getById(userId);
         return opt
@@ -47,6 +48,7 @@ public class userController {
 
     @Operation(summary = "更新用户信息，可传入任意可修改字段")
     @PutMapping("/{userId}")
+    @PreAuthorize("#userId == authentication.details or hasRole('ADMIN')")
     public ResponseEntity<String> updateUser(
             @PathVariable Long userId,
             @RequestBody User updates) {

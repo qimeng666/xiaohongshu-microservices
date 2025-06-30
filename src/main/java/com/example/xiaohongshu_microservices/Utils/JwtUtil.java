@@ -11,28 +11,18 @@ import java.util.Date;
 public class JwtUtil {
     @Value("${jwt.secret}") private String secret;
     @Value("${jwt.expiration}") private long expiration;         // 如 15 * 60 * 1000
-    @Value("${jwt.refreshExpiration}") private long refreshExpiration; // 如 7*24*3600*1000
 
     // 生成 Access Token
-    public String generateToken(UserDetails user) {
+    public String generateToken(UserDetails user, Long userId) {
         return Jwts.builder()
                 .setSubject(user.getUsername())
+                .claim("userId", userId)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(Keys.hmacShaKeyFor(secret.getBytes()))
                 .compact();
     }
 
-    // 生成 Refresh Token
-    public String generateRefreshToken(UserDetails user) {
-        return Jwts.builder()
-                .setSubject(user.getUsername())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + refreshExpiration))
-                .claim("type", "refresh")
-                .signWith(Keys.hmacShaKeyFor(secret.getBytes()))
-                .compact();
-    }
 
     // 验证并解析
     public Claims parseToken(String token) throws JwtException {

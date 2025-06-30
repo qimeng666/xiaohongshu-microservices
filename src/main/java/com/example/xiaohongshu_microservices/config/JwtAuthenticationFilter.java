@@ -44,8 +44,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
                 Claims claims = jwtUtil.parseToken(token);
                 String username = claims.getSubject();
-                UserDetails user = userDetailsService.loadUserByUsername(request.getLocalName());
+                Long userId = claims.get("userId", Long.class);
+                UserDetails user = userDetailsService.loadUserByUsername(username);
                 var auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                auth.setDetails(userId);
                 SecurityContextHolder.getContext().setAuthentication(auth);
             } catch (JwtException e) {
                 response.setStatus(HttpStatus.UNAUTHORIZED.value());

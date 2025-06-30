@@ -1,6 +1,8 @@
 package com.example.xiaohongshu_microservices.controller;
 
 import com.example.xiaohongshu_microservices.Entity.AuthRequest;
+import com.example.xiaohongshu_microservices.Entity.User;
+import com.example.xiaohongshu_microservices.Repository.UserRepository;
 import com.example.xiaohongshu_microservices.Service.BlacklistService;
 import com.example.xiaohongshu_microservices.Service.UserService;
 import com.example.xiaohongshu_microservices.Utils.JwtUtil;
@@ -42,7 +44,8 @@ public class authController {
             var auth = new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword());
             authManager.authenticate(auth);
             var userDetails = userDetailsService.loadUserByUsername(req.getUsername());
-            String token = jwtUtil.generateToken(userDetails);
+            Long userId = userDetailsService.findIdByName(req.getUsername());
+            String token = jwtUtil.generateToken(userDetails, userId);
             Map<String, String> tokenMap = new HashMap<>();
             tokenMap.put("accessToken", token);
             return ResponseEntity.ok(tokenMap);

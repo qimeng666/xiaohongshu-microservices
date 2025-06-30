@@ -37,13 +37,21 @@ public class UserServiceImpl implements UserService {
     }
     @Override
     public Optional<User> findByName(String username) {
-        return userRepository.findByName(username);
+        return userRepository.findByUsername(username);
+    }
+
+    @Override
+    public Long findIdByName(String username) {
+        return userRepository.findByUsername(username)
+                .map(User::getId)
+                .map(Long::valueOf)
+                .orElse(null);
     }
 
     @Override
     public UserDetails loadUserByUsername(String username)
             throws UsernameNotFoundException {
-        User user = userRepository.findByName(username)
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("用户不存在"));
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername())
