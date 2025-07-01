@@ -8,6 +8,7 @@ import com.example.xiaohongshu_microservices.Service.FollowService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -25,6 +26,7 @@ public class FollowServiceImpl implements FollowService {
                         HttpStatus.NOT_FOUND, "User not found: " + id));
     }
     @Override
+    @Transactional
     public void follow(Long userId, Long targetUserId) {
         if (userId.equals(targetUserId)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "不能关注自己");
@@ -38,6 +40,7 @@ public class FollowServiceImpl implements FollowService {
     }
 
     @Override
+    @Transactional
     public void unfollow(Long userId, Long targetUserId) {
         if (userId.equals(targetUserId)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "不能取消关注自己");
@@ -51,12 +54,14 @@ public class FollowServiceImpl implements FollowService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<User> getFollowing(Long userId) {
         User follower = loadUser(userId);
         return followRepo.findByFollower(follower).stream().map(Follow::getFollowee).collect(Collectors.toList());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<User> getFollowers(Long userId) {
         User followee = loadUser(userId);
         return followRepo.findByFollowee(followee).stream().map(Follow::getFollower).collect(Collectors.toList());
