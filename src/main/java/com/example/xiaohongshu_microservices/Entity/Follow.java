@@ -23,6 +23,11 @@ public class Follow {
     public Follow() {
     }
 
+    public Follow(User follower, User followee) {
+        this.follower = follower;
+        this.followee = followee;
+    }
+
     public Long getId() {
         return this.id;
     }
