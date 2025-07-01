@@ -1,14 +1,17 @@
 package com.example.xiaohongshu_microservices.controller;
 
 import com.example.xiaohongshu_microservices.Entity.User;
+import com.example.xiaohongshu_microservices.Service.FollowService;
 import com.example.xiaohongshu_microservices.Service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -17,9 +20,11 @@ import java.util.Optional;
 public class userController {
     private final UserService userService;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    private final FollowService followService;
 
-    public userController(UserService userService) {
+    public userController(UserService userService, FollowService followService) {
         this.userService = userService;
+        this.followService = followService;
     }
 
     @Operation(summary = "创建新用户")
@@ -38,6 +43,7 @@ public class userController {
 
     @Operation(summary = "根据用户ID查询用户信息")
     @GetMapping("/{userId}")
+    @PreAuthorize("#userId == authentication.details or hasRole('ADMIN')")
     public ResponseEntity<User> getById(@PathVariable Long userId) {
         Optional<User> opt = userService.getById(userId);
         return opt
@@ -47,6 +53,7 @@ public class userController {
 
     @Operation(summary = "更新用户信息，可传入任意可修改字段")
     @PutMapping("/{userId}")
+    @PreAuthorize("#userId == authentication.details or hasRole('ADMIN')")
     public ResponseEntity<String> updateUser(
             @PathVariable Long userId,
             @RequestBody User updates) {
@@ -86,5 +93,56 @@ public class userController {
         return opt
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }
+
+    public ResponseEntity<?> login(@RequestParam String username, @RequestParam String password) {
+        try {
+            User user = userService.findByName(username)
+                    .orElseThrow(() -> new RuntimeException("用户不存在"));
+            if (encoder.matches(password, user.getPassword())) {
+                return ResponseEntity.ok("登录成功");
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("密码错误");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("登录失败");
+        }
+    }
+
+    @Operation(summary = "关注用户")
+    @PostMapping("/{userId}/follow/{targetUserId}")
+    public ResponseEntity<String> follow(
+            @PathVariable Long userId,
+            @PathVariable Long targetUserId) {
+
+        followService.follow(userId, targetUserId);
+        return ResponseEntity.status(HttpStatus.CREATED).body("关注成功");
+    }
+
+    @Operation(summary = "取消关注用户")
+    @DeleteMapping("/{userId}/unfollow/{targetUserId}")
+    public ResponseEntity<String> unfollow(
+            @PathVariable Long userId,
+            @PathVariable Long targetUserId) {
+
+        followService.unfollow(userId, targetUserId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "获取指定用户关注列表")
+    @GetMapping("/{userId}/following")
+    public ResponseEntity<List<User>> getFollowing(
+            @PathVariable Long userId) {
+
+        List<User> following = followService.getFollowing(userId);
+        return ResponseEntity.ok(following);
+    }
+    @Operation(summary = "获取指定用户粉丝列表")
+    @GetMapping("/{userId}/followers")
+    public ResponseEntity<List<User>> getFollower(
+            @PathVariable Long userId) {
+
+        List<User> followers = followService.getFollowers(userId);
+        return ResponseEntity.ok(followers);
     }
 }
