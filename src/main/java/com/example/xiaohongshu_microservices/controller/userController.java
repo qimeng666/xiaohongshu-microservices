@@ -28,7 +28,7 @@ public class userController {
     }
 
     @Operation(summary = "创建新用户")
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<String> createUser(@RequestBody User user) {
         try {
             user.setPassword(encoder.encode(user.getPassword()));
@@ -145,4 +145,5 @@ public class userController {
         List<User> followers = followService.getFollowers(userId);
         return ResponseEntity.ok(followers);
     }
+
 }
