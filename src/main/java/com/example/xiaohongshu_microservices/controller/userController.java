@@ -28,7 +28,7 @@ public class userController {
     }
 
     @Operation(summary = "创建新用户")
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<String> createUser(@RequestBody User user) {
         try {
             user.setPassword(encoder.encode(user.getPassword()));
@@ -72,9 +72,9 @@ public class userController {
             existing.setUsername(updates.getUsername());
         }
         // update password
-        // if (updates.getPassword() != null) {
-        //     existing.setPassword(encoder.encode(updates.getPassword()));
-        // }
+         if (updates.getPassword() != null) {
+             existing.setPassword(encoder.encode(updates.getPassword()));
+         }
 
         try {
             userService.update(existing);
@@ -145,4 +145,38 @@ public class userController {
         List<User> followers = followService.getFollowers(userId);
         return ResponseEntity.ok(followers);
     }
+    
+    @Operation(summary = "清除所有用户缓存")
+    @DeleteMapping("/cache/clear")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> clearUserCache() {
+        try {
+            // 需要强制转换为 UserServiceImpl 来访问 clearAllUserCache 方法
+            if (userService instanceof com.example.xiaohongshu_microservices.Service.Impl.UserServiceImpl) {
+                ((com.example.xiaohongshu_microservices.Service.Impl.UserServiceImpl) userService).clearAllUserCache();
+                return ResponseEntity.ok("用户缓存清除成功");
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("无法访问缓存服务");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("清除缓存失败: " + e.getMessage());
+        }
+    }
+    
+    @Operation(summary = "清除所有UserDetails缓存")
+    @DeleteMapping("/cache/clear-userdetails")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> clearUserDetailsCache() {
+        try {
+            if (userService instanceof com.example.xiaohongshu_microservices.Service.Impl.UserServiceImpl) {
+                ((com.example.xiaohongshu_microservices.Service.Impl.UserServiceImpl) userService).clearAllUserDetailsCache();
+                return ResponseEntity.ok("UserDetails缓存清除成功");
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("无法访问缓存服务");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("清除UserDetails缓存失败: " + e.getMessage());
+        }
+    }
+
 }

@@ -60,9 +60,12 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/users/**").authenticated()
+                        .requestMatchers("/users/create").permitAll()
+                        .requestMatchers("/internal/users/**").permitAll()
+                        .requestMatchers("/users/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/follow/**").permitAll()
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
