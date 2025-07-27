@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7.2           # 只 pull 官方镜像，不 build
+    container_name: redis7
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data        # 持久化到命名卷
+    command:                     # 启用 AOF 持久化
+      - redis-server
+      - --appendonly
+      - "yes"
+
+volumes:
+  redis-data:                   # 在 Docker 内部管理的持久化卷

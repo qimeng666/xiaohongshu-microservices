@@ -49,4 +49,19 @@ Content-Type: application/json
 - 通过`/auth/logout` 来使相关的token退出登录。
 - 通过黑名单来实现，把退出的 token 存入黑名单。
 - 后续请求中如果发现该 token 在黑名单中，则拒绝访问。
+
+## Docker
+### 1. 启动 Redis 服务
+- docker start redis7
+- docker-compose -f docker-redis-compose.yml up -d redis
+### 2. 查看 Redis 服务状态
+- docker ps
+### 3. 连接 Redis 服务
+- redis-cli -h 127.0.0.1 -p 6379
+### 4. 停止容器
+- docker stop redis7
+#### （可选）删除容器
+- docker rm redis7
+
+
 `
