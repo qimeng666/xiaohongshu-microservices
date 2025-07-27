@@ -78,7 +78,15 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User update(User user) {
-        return userRepository.save(user);
+        User save = userRepository.save(user);
+        String cacheKey = USER_CACHE_KEY_PREFIX + user.getId();
+        String userJson = redisTemplate.opsForValue().get(cacheKey);
+        // 如果缓存中存在用户信息，则直接删除缓存
+        if (userJson != null){
+            redisTemplate.opsForValue().getAndDelete(cacheKey);
+            System.out.println("【cache hit】userId=" + user.getId() + ", delete cache");
+        }
+        return save;
     }
 
     @Override

@@ -72,9 +72,9 @@ public class userController {
             existing.setUsername(updates.getUsername());
         }
         // update password
-        // if (updates.getPassword() != null) {
-        //     existing.setPassword(encoder.encode(updates.getPassword()));
-        // }
+         if (updates.getPassword() != null) {
+             existing.setPassword(encoder.encode(updates.getPassword()));
+         }
 
         try {
             userService.update(existing);
