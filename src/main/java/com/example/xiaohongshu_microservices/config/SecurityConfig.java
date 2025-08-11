@@ -3,9 +3,12 @@ package com.example.xiaohongshu_microservices.config;
 import com.example.xiaohongshu_microservices.Service.BlacklistService;
 import com.example.xiaohongshu_microservices.Service.UserService;
 import com.example.xiaohongshu_microservices.Utils.JwtUtil;
+
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.*;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -20,7 +23,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.*;
-        import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import java.security.Security;
 
@@ -50,6 +53,16 @@ public class SecurityConfig {
     ) throws Exception {
         return authConfig.getAuthenticationManager();
     }
+    @Order(0)
+    @Bean
+    SecurityFilterChain actuatorSecurity(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher(EndpointRequest.toAnyEndpoint()) // 只匹配 Actuator
+                .authorizeHttpRequests(a -> a.anyRequest().permitAll()) // 全部放开（匿名可访问）
+                .csrf(AbstractHttpConfigurer::disable);
+        return http.build();
+    }
+    @Order(1)
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(jwtUtil, blacklistService, userService);
