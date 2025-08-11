@@ -24,6 +24,15 @@ spring:
           max-wait: 100
       cache:
         type: redis
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
 server:
   port: 8081
 jwt:
