@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- 可选：统一时区 -->
+    <timestamp key="BY_APP_START" datePattern="yyyy-MM-dd'T'HH:mm:ss.SSSZ"/>
+
+    <!-- 控制台 JSON -->
+    <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp timeZone="UTC"/>                <!-- timestamp -->
+                <logLevel/>                                <!-- level -->
+                <threadName fieldName="thread"/>           <!-- thread -->
+                <loggerName fieldName="logger"/>           <!-- logger -->
+                <message/>                                 <!-- message -->
+                <!-- 从 MDC 中挑选要输出的键 -->
+                <mdc>
+                    <includeMdcKeyName>traceId</includeMdcKeyName>
+                    <includeMdcKeyName>userId</includeMdcKeyName>
+                    <includeMdcKeyName>requestId</includeMdcKeyName>
+                </mdc>
+                <stackTrace/>                              <!-- 异常时输出堆栈 -->
+                <!-- 添加应用信息 -->
+                <pattern>
+                    <pattern>
+                        {
+                            "app": "xiaohongshu-microservices",
+                            "version": "1.0.0",
+                            "host": "${HOSTNAME:-unknown}"
+                        }
+                    </pattern>
+                </pattern>
+            </providers>
+        </encoder>
+    </appender>
+
+    <!-- 文件 JSON 输出 -->
+    <appender name="JSON_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/application.json</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/application.%d{yyyy-MM-dd}.json</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp timeZone="UTC"/>
+                <logLevel/>
+                <threadName fieldName="thread"/>
+                <loggerName fieldName="logger"/>
+                <message/>
+                <mdc>
+                    <includeMdcKeyName>traceId</includeMdcKeyName>
+                    <includeMdcKeyName>userId</includeMdcKeyName>
+                    <includeMdcKeyName>requestId</includeMdcKeyName>
+                </mdc>
+                <stackTrace/>
+                <pattern>
+                    <pattern>
+                        {
+                            "app": "xiaohongshu-microservices",
+                            "version": "1.0.0",
+                            "host": "${HOSTNAME:-unknown}"
+                        }
+                    </pattern>
+                </pattern>
+            </providers>
+        </encoder>
+    </appender>
+
+    <!-- 错误日志单独输出 -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/error.json</file>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/error.%d{yyyy-MM-dd}.json</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp timeZone="UTC"/>
+                <logLevel/>
+                <threadName fieldName="thread"/>
+                <loggerName fieldName="logger"/>
+                <message/>
+                <mdc>
+                    <includeMdcKeyName>traceId</includeMdcKeyName>
+                    <includeMdcKeyName>userId</includeMdcKeyName>
+                    <includeMdcKeyName>requestId</includeMdcKeyName>
+                </mdc>
+                <stackTrace/>
+                <pattern>
+                    <pattern>
+                        {
+                            "app": "xiaohongshu-microservices",
+                            "version": "1.0.0",
+                            "host": "${HOSTNAME:-unknown}"
+                        }
+                    </pattern>
+                </pattern>
+            </providers>
+        </encoder>
+    </appender>
+
+    <!-- 生产建议走异步，避免阻塞 -->
+    <appender name="ASYNC_JSON" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="JSON_CONSOLE"/>
+        <queueSize>8192</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="JSON_FILE"/>
+        <queueSize>8192</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <appender name="ASYNC_ERROR" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="ERROR_FILE"/>
+        <queueSize>8192</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+    </appender>
+
+    <!-- 根日志配置 -->
+    <root level="INFO">
+        <appender-ref ref="ASYNC_JSON"/>
+        <appender-ref ref="ASYNC_FILE"/>
+        <appender-ref ref="ASYNC_ERROR"/>
+    </root>
+
+    <!-- 指定你代码包的日志级别（按需） -->
+    <logger name="com.example" level="DEBUG"/>
+    
+    <!-- 降低第三方库的日志级别 -->
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="com.zaxxer.hikari" level="WARN"/>
+    
+    <!-- 开发环境可以开启SQL日志 -->
+    <springProfile name="dev">
+        <logger name="org.hibernate.SQL" level="DEBUG"/>
+        <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
+    </springProfile>
+</configuration>
