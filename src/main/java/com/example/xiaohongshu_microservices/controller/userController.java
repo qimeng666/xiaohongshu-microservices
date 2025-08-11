@@ -3,8 +3,11 @@ package com.example.xiaohongshu_microservices.controller;
 import com.example.xiaohongshu_microservices.Entity.User;
 import com.example.xiaohongshu_microservices.Service.FollowService;
 import com.example.xiaohongshu_microservices.Service.UserService;
+import com.example.xiaohongshu_microservices.Utils.MDCTraceUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,6 +21,8 @@ import java.util.Optional;
 @RequestMapping("/users")
 @Tag(name = "用户管理", description = "用户基础信息增删改查")
 public class userController {
+    private static final Logger logger = LoggerFactory.getLogger(userController.class);
+    
     private final UserService userService;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     private final FollowService followService;
@@ -30,11 +35,19 @@ public class userController {
     @Operation(summary = "创建新用户")
     @PostMapping("/create")
     public ResponseEntity<String> createUser(@RequestBody User user) {
+        logger.info("开始创建用户 - 用户名: {}, 邮箱: {}", user.getUsername(), user.getEmail());
+        
         try {
             user.setPassword(encoder.encode(user.getPassword()));
             userService.save(user);
+            
+            // 设置用户ID到MDC，便于后续日志追踪
+            MDCTraceUtils.setUserId(user.getId().toString());
+            
+            logger.info("用户创建成功 - 用户ID: {}", user.getId());
             return ResponseEntity.ok("创建成功");
         } catch (Exception e) {
+            logger.error("用户创建失败 - 用户名: {}, 错误: {}", user.getUsername(), e.getMessage(), e);
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("创建失败");
@@ -45,10 +58,19 @@ public class userController {
     @GetMapping("/{userId}")
     @PreAuthorize("#userId == authentication.details or hasRole('ADMIN')")
     public ResponseEntity<User> getById(@PathVariable Long userId) {
+        logger.info("查询用户信息 - 用户ID: {}", userId);
+        
+        // 设置用户ID到MDC
+        MDCTraceUtils.setUserId(userId.toString());
+        
         Optional<User> opt = userService.getById(userId);
-        return opt
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+        if (opt.isPresent()) {
+            logger.info("用户信息查询成功 - 用户ID: {}, 用户名: {}", userId, opt.get().getUsername());
+            return ResponseEntity.ok(opt.get());
+        } else {
+            logger.warn("用户不存在 - 用户ID: {}", userId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     @Operation(summary = "更新用户信息，可传入任意可修改字段")
